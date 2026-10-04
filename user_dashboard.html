@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>BugFlow - User Dashboard</title>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================= */
+
+        .navbar {
+            height: 70px;
+            background: #222;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 35px;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-user {
+            font-size: 15px;
+        }
+
+        .logout-btn {
+            border: none;
+            background: white;
+            color: #222;
+
+            padding: 9px 18px;
+            border-radius: 5px;
+
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .logout-btn:hover {
+            background: #ddd;
+        }
+
+        /* =========================
+           LAYOUT
+        ========================= */
+
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+            width: 240px;
+            background: #2d2d2d;
+            color: white;
+            padding-top: 25px;
+            flex-shrink: 0;
+        }
+
+        .sidebar h3 {
+            padding: 0 25px 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu li {
+            padding: 14px 25px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .menu li:hover {
+            background: #444;
+        }
+
+        .menu li.active {
+            background: #444;
+            border-left: 4px solid white;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: #444;
+            margin: 15px 20px;
+        }
+
+        .menu-label {
+            padding: 10px 25px;
+            color: #888;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* =========================
+           MAIN
+        ========================= */
+
+        .main {
+            flex: 1;
+            padding: 35px;
+            overflow-x: hidden;
+        }
+
+        .page-title {
+            margin-bottom: 25px;
+        }
+
+        .page-title h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .page-title p {
+            color: #666;
+        }
+
+        /* =========================
+           WELCOME
+        ========================= */
+
+        .welcome {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .welcome h2 {
+            margin-bottom: 10px;
+        }
+
+        .welcome p {
+            color: #666;
+        }
+
+        /* =========================
+           SECTION TITLE
+        ========================= */
+
+        .section-title {
+            margin-top: 35px;
+            margin-bottom: 18px;
+        }
+
+        .section-title h2 {
+            font-size: 21px;
+        }
+
+        .section-title p {
+            color: #777;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        /* =========================
+           CARDS
+        ========================= */
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 18px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .card h3 {
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        /* =========================
+           STAT CARDS
+        ========================= */
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-title {
+            color: #666;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .stat-description {
+            font-size: 12px;
+            color: #888;
+            margin-top: 7px;
+        }
+
+        /* =========================
+           PROFILE
+        ========================= */
+
+        .profile-row {
+            margin: 11px 0;
+            font-size: 14px;
+        }
+
+        .profile-row strong {
+            display: inline-block;
+            width: 75px;
+        }
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
+        .btn {
+            background: #222;
+            color: white;
+
+            border: none;
+
+            padding: 11px 18px;
+
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #444;
+        }
+
+        .btn-light {
+            background: white;
+            color: #222;
+            border: 1px solid #ccc;
+        }
+
+        .btn-light:hover {
+            background: #f1f1f1;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* =========================
+           CHART GRID
+        ========================= */
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .chart-card.full {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .chart-subtitle {
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        .chart {
+            width: 100%;
+            height: 350px;
+        }
+
+        /* =========================
+           WORKFLOW
+        ========================= */
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .workflow-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .workflow-number {
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .workflow-name {
+            font-size: 13px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        /* =========================
+           API EXPLORER
+        ========================= */
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 15px;
+        }
+
+        .api-card {
+            background: white;
+            padding: 18px;
+            border-radius: 9px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .api-method {
+            display: inline-block;
+            background: #222;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .api-url {
+            font-family: monospace;
+            font-size: 13px;
+            color: #555;
+            word-break: break-all;
+        }
+
+        /* =========================
+           STATUS
+        ========================= */
+
+        .status-message {
+            padding: 12px 15px;
+            border-radius: 7px;
+            background: #eee;
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        /* =========================
+           INFO BANNER
+        ========================= */
+
+        .milestone-banner {
+            background: #222;
+            color: white;
+
+            border-radius: 10px;
+            padding: 20px 22px;
+
+            margin-bottom: 25px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .milestone-banner h3 {
+            margin-bottom: 6px;
+        }
+
+        .milestone-banner p {
+            color: #ccc;
+            font-size: 13px;
+        }
+
+        .milestone-badge {
+            border: 1px solid #777;
+            padding: 8px 13px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+
+        /* =========================
+           EXPORT
+        ========================= */
+
+        .export-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .export-text h3 {
+            margin-bottom: 6px;
+        }
+
+        .export-text p {
+            margin: 0;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 1000px) {
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .workflow-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+        }
+
+        @media (max-width: 700px) {
+
+            .sidebar {
+                width: 180px;
+            }
+
+            .navbar {
+                padding: 0 15px;
+            }
+
+            .main {
+                padding: 20px;
+            }
+
+            .nav-user {
+                display: none;
+            }
+
+            .milestone-banner {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+        }
+
+        @media (max-width: 500px) {
+
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .workflow-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- =========================
+         NAVBAR
+    ========================= -->
+
+    <div class="navbar">
+
+        <div class="logo">
+            BugFlow
+        </div>
+
+        <div class="nav-right">
+
+            <span class="nav-user" id="navUser">
+                User
+            </span>
+
+            <button
+                class="logout-btn"
+                onclick="logout()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         LAYOUT
+    ========================= -->
+
+    <div class="layout">
+
+
+        <!-- =========================
+             SIDEBAR
+        ========================= -->
+
+        <aside class="sidebar">
+
+            <h3>USER MENU</h3>
+
+            <ul class="menu">
+
+                <li
+                    class="active"
+                    onclick="showDashboard()">
+
+                    Dashboard
+
+                </li>
+
+                <li onclick="reportIssue()">
+
+                    Report Issue
+
+                </li>
+
+                <li onclick="viewIssues()">
+
+                    My Issues
+
+                </li>
+
+                <div class="menu-divider"></div>
+
+                <div class="menu-label">
+                    MILESTONE 3
+                </div>
+
+                <li onclick="scrollToSection('analytics')">
+
+                    Analytics
+
+                </li>
+
+                <li onclick="scrollToSection('quality')">
+
+                    Quality Scorecard
+
+                </li>
+
+                <li onclick="scrollToSection('exports')">
+
+                    Export Reports
+
+                </li>
+
+            </ul>
+
+        </aside>
+
+
+        <!-- =========================
+             MAIN
+        ========================= -->
+
+        <main class="main">
+
+
+            <!-- PAGE TITLE -->
+
+            <div class="page-title">
+
+                <h1>
+                    User Dashboard
+                </h1>
+
+                <p>
+                    Manage your BugFlow activities and monitor software quality.
+                </p>
+
+            </div>
+
+
+            <!-- =========================
+                 WELCOME
+            ========================= -->
+
+            <div class="welcome">
+
+                <h2>
+                    Welcome,
+                    <span id="userName">
+                        User
+                    </span>!
+                </h2>
+
+                <p>
+                    You are logged in to the BugFlow user dashboard.
+                    Report issues, track your bugs and monitor project quality.
+                </p>
+
+            </div>
+
+
+            <!-- =========================
+                 MILESTONE 3 BANNER
+            ========================= -->
+
+            <div class="milestone-banner">
+
+                <div>
+
+                    <h3>
+                        Milestone 3: Analytics & APIs
+                    </h3>
+
+                    <p>
+                        Monitor defect trends, quality metrics, workflow status
+                        and generate project reports.
+                    </p>
+
+                </div>
+
+                <div class="milestone-badge">
+                    QUALITY MONITORING
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 BASIC USER CARDS
+            ========================= -->
+
+            <div class="cards">
+
+
+                <!-- PROFILE -->
+
+                <div class="card">
+
+                    <h3>
+                        My Profile
+                    </h3>
+
+                    <div class="profile-row">
+
+                        <strong>Name:</strong>
+
+                        <span id="userNameProfile">
+                            -
+                        </span>
+
+                    </div>
+
+                    <div class="profile-row">
+
+                        <strong>Email:</strong>
+
+                        <span id="userEmail">
+                            -
+                        </span>
+
+                    </div>
+
+                    <div class="profile-row">
+
+                        <strong>Role:</strong>
+
+                        <span id="userRole">
+                            -
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- REPORT ISSUE -->
+
+                <div class="card">
+
+                    <h3>
+                        Report an Issue
+                    </h3>
+
+                    <p>
+                        Found a bug or problem?
+                        Report it to the BugFlow team.
+                    </p>
+
+                    <button
+                        class="btn"
+                        onclick="reportIssue()">
+
+                        Report New Issue
+
+                    </button>
+
+                </div>
+
+
+                <!-- MY ISSUES -->
+
+                <div class="card">
+
+                    <h3>
+                        My Issues
+                    </h3>
+
+                    <p>
+                        View the issues you have reported
+                        and track their status.
+                    </p>
+
+                    <button
+                        class="btn"
+                        onclick="viewIssues()">
+
+                        View My Issues
+
+                    </button>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =========================
+                 QUALITY SCORECARD
+            ========================= -->
+
+            <div
+                class="section-title"
+                id="quality">
+
+                <h2>
+                    Quality Scorecard
+                </h2>
+
+                <p>
+                    Current software quality indicators.
+                </p>
+
+            </div>
+
+
+            <div class="cards">
+
+
+                <div class="card stat-card">
+
+                    <div class="stat-title">
+                        Fix Rate
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="fixRate">
+
+                        --
+
+                    </div>
+
+                    <div class="stat-description">
+                        Resolved + Closed issues
+                    </div>
+
+                </div>
+
+
+                <div class="card stat-card">
+
+                    <div class="stat-title">
+                        MTTR
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="mttr">
+
+                        --
+
+                    </div>
+
+                    <div class="stat-description">
+                        Mean Time To Resolution
+                    </div>
+
+                </div>
+
+
+                <div class="card stat-card">
+
+                    <div class="stat-title">
+                        Defect Leakage
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="defectLeakage">
+
+                        --
+
+                    </div>
+
+                    <div class="stat-description">
+                        Production bugs / total bugs
+                    </div>
+
+                </div>
+
+
+                <div class="card stat-card">
+
+                    <div class="stat-title">
+                        Backlog Health
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="backlogHealth">
+
+                        --
+
+                    </div>
+
+                    <div class="stat-description">
+                        Overall backlog quality
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =========================
+                 WORKFLOW PIPELINE
+            ========================= -->
+
+            <div class="section-title">
+
+                <h2>
+                    Workflow Pipeline
+                </h2>
+
+                <p>
+                    Current issue workflow distribution.
+                </p>
+
+            </div>
+
+
+            <div class="workflow-grid">
+
+
+                <div class="workflow-card">
+
+                    <div
+                        class="workflow-number"
+                        id="reportedCount">
+
+                        0
+
+                    </div>
+
+                    <div class="workflow-name">
+                        REPORTED
+                    </div>
+
+                </div>
+
+
+                <div class="workflow-card">
+
+                    <div
+                        class="workflow-number"
+                        id="qaCount">
+
+                        0
+
+                    </div>
+
+                    <div class="workflow-name">
+                        QA VERIFICATION
+                    </div>
+
+                </div>
+
+
+                <div class="workflow-card">
+
+                    <div
+                        class="workflow-number"
+                        id="resolvedCount">
+
+                        0
+
+                    </div>
+
+                    <div class="workflow-name">
+                        RESOLVED
+                    </div>
+
+                </div>
+
+
+                <div class="workflow-card">
+
+                    <div
+                        class="workflow-number"
+                        id="closedCount">
+
+                        0
+
+                    </div>
+
+                    <div class="workflow-name">
+                        CLOSED
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =========================
+                 ANALYTICS
+            ========================= -->
+
+            <div
+                class="section-title"
+                id="analytics">
+
+                <h2>
+                    Milestone 3 Analytics
+                </h2>
+
+                <p>
+                    Interactive Plotly analytics generated from BugFlow data.
+                </p>
+
+            </div>
+
+
+            <div
+                id="analyticsMessage"
+                class="status-message">
+            </div>
+
+
+            <div class="chart-grid">
+
+
+                <!-- DEFECT TREND -->
+
+                <div class="chart-card full">
+
+                    <div class="chart-title">
+                        Defect Trend - Last 14 Days
+                    </div>
+
+                    <div class="chart-subtitle">
+                        New bugs versus resolved bugs
+                    </div>
+
+                    <div
+                        id="defectTrendChart"
+                        class="chart">
+
+                    </div>
+
+                </div>
+
+
+                <!-- SEVERITY -->
+
+                <div class="chart-card">
+
+                    <div class="chart-title">
+                        Severity Distribution
+                    </div>
+
+                    <div class="chart-subtitle">
+                        Current issues by severity
+                    </div>
+
+                    <div
+                        id="severityChart"
+                        class="chart">
+
+                    </div>
+
+                </div>
+
+
+                <!-- WORKFLOW -->
+
+                <div class="chart-card">
+
+                    <div class="chart-title">
+                        Workflow Analytics
+                    </div>
+
+                    <div class="chart-subtitle">
+                        Issues across workflow stages
+                    </div>
+
+                    <div
+                        id="workflowChart"
+                        class="chart">
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =========================
+                 EXPORT REPORTS
+            ========================= -->
+
+            <div
+                class="section-title"
+                id="exports">
+
+                <h2>
+                    Export Reports
+                </h2>
+
+                <p>
+                    Download BugFlow project data for reporting.
+                </p>
+
+            </div>
+
+
+            <div class="card export-card">
+
+                <div class="export-text">
+
+                    <h3>
+                        BugFlow Reports
+                    </h3>
+
+                    <p>
+                        Export issue information as PDF or CSV.
+                    </p>
+
+                </div>
+
+                <div class="button-row">
+
+                    <button
+                        class="btn"
+                        onclick="exportPDF()">
+
+                        Export PDF
+
+                    </button>
+
+                    <button
+                        class="btn btn-light"
+                        onclick="exportCSV()">
+
+                        Export CSV
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 REST API EXPLORER
+            ========================= -->
+
+            <div class="section-title">
+
+                <h2>
+                    REST API Explorer
+                </h2>
+
+                <p>
+                    Milestone 3 backend API endpoints available in BugFlow.
+                </p>
+
+            </div>
+
+
+            <div class="api-grid">
+
+
+                <div class="api-card">
+
+                    <span class="api-method">
+                        GET
+                    </span>
+
+                    <div class="api-url">
+                        /api/v1/metrics
+                    </div>
+
+                    <br>
+
+                    <button
+                        class="btn"
+                        onclick="testAPI('/api/v1/metrics')">
+                        GET
+                    </button>
+
+                </div>
+
+
+                <div class="api-card">
+
+                    <span class="api-method">
+                        GET
+                    </span>
+
+                    <div class="api-url">
+                        /api/v1/analytics/defect-trend
+                    </div>
+
+                    <br>
+
+                    <button
+                        class="btn"
+                        onclick="testAPI('/api/v1/analytics/defect-trend')">
+                        GET
+                    </button>
+
+                </div>
+
+
+                <div class="api-card">
+
+                    <span class="api-method">
+                        GET
+                    </span>
+
+                    <div class="api-url">
+                        /api/v1/analytics/severity
+                    </div>
+
+                    <br>
+
+                    <button
+                        class="btn"
+                        onclick="testAPI('/api/v1/analytics/severity')">
+                        GET
+                    </button>
+
+                </div>
+
+
+                <div class="api-card">
+
+                    <span class="api-method">
+                        GET
+                    </span>
+
+                    <div class="api-url">
+                        /api/v1/analytics/workflow
+                    </div>
+
+                    <br>
+
+                    <button
+                        class="btn"
+                        onclick="testAPI('/api/v1/analytics/workflow')">
+                        GET
+                    </button>
+
+                </div>
+
+
+            </div>
+
+
+            <div id="apiExplorerMessage"
+                 class="status-message">
+            </div>
+
+
+            <div class="card" style="margin-top:20px;">
+
+                <h3>
+                    API Response
+                </h3>
+
+                <pre id="apiResponse"
+                     style="
+                        background:#f4f6f8;
+                        padding:15px;
+                        border-radius:6px;
+                        margin-top:12px;
+                        overflow:auto;
+                        max-height:400px;
+                        white-space:pre-wrap;
+                     ">Click GET to test an endpoint.</pre>
+
+            </div>
+
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================= -->
+
+    <script>
+
+        // ==========================================
+        // GET LOGGED-IN USER
+        // ==========================================
+
+        const userData =
+            localStorage.getItem("user");
+
+
+        // ==========================================
+        // CHECK LOGIN
+        // ==========================================
+
+        if (!userData) {
+
+            window.location.href = "/login";
+
+        }
+
+
+        let user;
+
+        try {
+
+            user = JSON.parse(userData);
+
+        } catch (error) {
+
+            localStorage.removeItem("user");
+
+            window.location.href = "/login";
+
+        }
+
+
+        // ==========================================
+        // ROLE CHECK
+        // ==========================================
+
+        if (user && user.role === "admin") {
+
+            window.location.href =
+                "/admin-dashboard";
+
+        }
+
+
+        // ==========================================
+        // DISPLAY USER DETAILS
+        // ==========================================
+
+        if (user) {
+
+            document.getElementById("userName")
+                .textContent = user.name;
+
+            document.getElementById("userNameProfile")
+                .textContent = user.name;
+
+            document.getElementById("userEmail")
+                .textContent = user.email;
+
+            document.getElementById("userRole")
+                .textContent = user.role;
+
+            document.getElementById("navUser")
+                .textContent = user.name;
+
+        }
+
+
+        // ==========================================
+        // DASHBOARD
+        // ==========================================
+
+        function showDashboard() {
+
+            window.location.href =
+                "/user-dashboard";
+
+        }
+
+
+        // ==========================================
+        // REPORT ISSUE
+        // ==========================================
+
+        function reportIssue() {
+
+            window.location.href =
+                "/report-issue";
+
+        }
+
+
+        // ==========================================
+        // MY ISSUES
+        // ==========================================
+
+        function viewIssues() {
+
+            window.location.href =
+                "/my-issues";
+
+        }
+
+
+        // ==========================================
+        // SCROLL
+        // ==========================================
+
+        function scrollToSection(id) {
+
+            const element =
+                document.getElementById(id);
+
+            if (element) {
+
+                element.scrollIntoView({
+                    behavior: "smooth"
+                });
+
+            }
+
+        }
+
+
+        // ==========================================
+        // EXPORT PDF
+        // ==========================================
+
+        function exportPDF() {
+
+            window.location.href =
+                "/api/v1/export/pdf";
+
+        }
+
+
+        // ==========================================
+        // EXPORT CSV
+        // ==========================================
+
+        function exportCSV() {
+
+            window.location.href =
+                "/api/v1/export/csv";
+
+        }
+
+
+        // ==========================================
+        // LOAD QUALITY METRICS
+        // ==========================================
+
+        async function loadMetrics() {
+
+            try {
+
+                const response =
+                    await fetch("/api/v1/metrics");
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    console.log(
+                        "Metrics error:",
+                        data
+                    );
+
+                    return;
+
+                }
+
+
+                document.getElementById("fixRate")
+                    .textContent =
+                    formatPercent(
+                        data.fix_rate
+                    );
+
+
+                document.getElementById("mttr")
+                    .textContent =
+                    formatMTTR(
+                        data.mttr_hours
+                    );
+
+
+                document.getElementById("defectLeakage")
+                    .textContent =
+                    formatPercent(
+                        data.defect_leakage_rate
+                    );
+
+
+                document.getElementById("backlogHealth")
+                    .textContent =
+                    formatNumber(
+                        data.backlog_health_score
+                    );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Metrics loading error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // LOAD WORKFLOW
+        // ==========================================
+
+        async function loadWorkflow() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/v1/analytics/workflow"
+                    );
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    console.log(
+                        "Workflow error:",
+                        data
+                    );
+
+                    return;
+
+                }
+
+
+                const workflow =
+                    data.workflow || [];
+
+
+                let reported = 0;
+                let qa = 0;
+                let resolved = 0;
+                let closed = 0;
+
+
+                workflow.forEach(item => {
+
+                    const status =
+                        item.status;
+
+                    const count =
+                        Number(item.count || 0);
+
+
+                    if (status === "REPORTED") {
+
+                        reported = count;
+
+                    }
+
+                    else if (
+                        status === "QA_VERIFICATION" ||
+                        status === "IN_REVIEW"
+                    ) {
+
+                        qa = count;
+
+                    }
+
+                    else if (
+                        status === "RESOLVED"
+                    ) {
+
+                        resolved = count;
+
+                    }
+
+                    else if (
+                        status === "CLOSED"
+                    ) {
+
+                        closed = count;
+
+                    }
+
+                });
+
+
+                document.getElementById(
+                    "reportedCount"
+                ).textContent = reported;
+
+
+                document.getElementById(
+                    "qaCount"
+                ).textContent = qa;
+
+
+                document.getElementById(
+                    "resolvedCount"
+                ).textContent = resolved;
+
+
+                document.getElementById(
+                    "closedCount"
+                ).textContent = closed;
+
+
+                // Plotly chart
+
+                const labels = [
+                    "REPORTED",
+                    "QA VERIFICATION",
+                    "RESOLVED",
+                    "CLOSED"
+                ];
+
+
+                const values = [
+                    reported,
+                    qa,
+                    resolved,
+                    closed
+                ];
+
+
+                Plotly.newPlot(
+                    "workflowChart",
+                    [{
+                        x: labels,
+                        y: values,
+                        type: "bar"
+                    }],
+                    {
+                        margin: {
+                            t: 20,
+                            r: 20,
+                            b: 70,
+                            l: 50
+                        },
+                        yaxis: {
+                            rangemode: "tozero"
+                        }
+                    },
+                    {
+                        responsive: true,
+                        displayModeBar: false
+                    }
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Workflow loading error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // LOAD SEVERITY
+        // ==========================================
+
+        async function loadSeverity() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/v1/analytics/severity"
+                    );
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    console.log(
+                        "Severity error:",
+                        data
+                    );
+
+                    return;
+
+                }
+
+
+                let labels = [];
+                let values = [];
+
+
+                if (Array.isArray(data.severity)) {
+
+                    data.severity.forEach(item => {
+
+                        labels.push(
+                            item.severity
+                        );
+
+                        values.push(
+                            Number(item.count || 0)
+                        );
+
+                    });
+
+                }
+
+                else if (data.labels && data.values) {
+
+                    labels = data.labels;
+                    values = data.values;
+
+                }
+
+
+                if (!labels.length) {
+
+                    labels = [
+                        "CRITICAL",
+                        "MAJOR",
+                        "MINOR",
+                        "BLOCKER"
+                    ];
+
+                    values = [0, 0, 0, 0];
+
+                }
+
+
+                Plotly.newPlot(
+                    "severityChart",
+                    [{
+                        labels: labels,
+                        values: values,
+                        type: "pie",
+                        hole: 0.55
+                    }],
+                    {
+                        margin: {
+                            t: 20,
+                            r: 20,
+                            b: 20,
+                            l: 20
+                        },
+                        showlegend: true
+                    },
+                    {
+                        responsive: true,
+                        displayModeBar: false
+                    }
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Severity loading error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // LOAD DEFECT TREND
+        // ==========================================
+
+        async function loadDefectTrend() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/v1/analytics/defect-trend"
+                    );
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    console.log(
+                        "Defect trend error:",
+                        data
+                    );
+
+                    return;
+
+                }
+
+
+                const dates =
+                    data.dates ||
+                    data.labels ||
+                    [];
+
+
+                const newBugs =
+                    data.new_bugs ||
+                    data.new ||
+                    data.created ||
+                    [];
+
+
+                const resolvedBugs =
+                    data.resolved_bugs ||
+                    data.resolved ||
+                    [];
+
+
+                Plotly.newPlot(
+                    "defectTrendChart",
+                    [
+                        {
+                            x: dates,
+                            y: newBugs,
+                            type: "scatter",
+                            mode: "lines+markers",
+                            name: "New Bugs"
+                        },
+                        {
+                            x: dates,
+                            y: resolvedBugs,
+                            type: "scatter",
+                            mode: "lines+markers",
+                            name: "Resolved Bugs"
+                        }
+                    ],
+                    {
+                        margin: {
+                            t: 20,
+                            r: 20,
+                            b: 60,
+                            l: 50
+                        },
+                        xaxis: {
+                            title: "Date"
+                        },
+                        yaxis: {
+                            title: "Issues",
+                            rangemode: "tozero"
+                        },
+                        legend: {
+                            orientation: "h"
+                        }
+                    },
+                    {
+                        responsive: true,
+                        displayModeBar: false
+                    }
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Defect trend loading error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // ==========================================
+        // FORMAT PERCENT
+        // ==========================================
+
+        function formatPercent(value) {
+
+            if (
+                value === undefined ||
+                value === null ||
+                isNaN(value)
+            ) {
+
+                return "--";
+
+            }
+
+            return Number(value).toFixed(1) + "%";
+
+        }
+
+
+        // ==========================================
+        // FORMAT MTTR
+        // ==========================================
+
+        function formatMTTR(value) {
+
+            if (
+                value === undefined ||
+                value === null ||
+                isNaN(value)
+            ) {
+
+                return "--";
+
+            }
+
+            return Number(value).toFixed(1) + " hrs";
+
+        }
+
+
+        // ==========================================
+        // FORMAT NUMBER
+        // ==========================================
+
+        function formatNumber(value) {
+
+            if (
+                value === undefined ||
+                value === null ||
+                isNaN(value)
+            ) {
+
+                return "--";
+
+            }
+
+            return Number(value).toFixed(0);
+
+        }
+
+
+        // ==========================================
+        // REST API EXPLORER
+        // ==========================================
+
+        async function testAPI(endpoint) {
+
+            const responseBox =
+                document.getElementById("apiResponse");
+
+            const message =
+                document.getElementById("apiExplorerMessage");
+
+            responseBox.textContent =
+                "Loading " + endpoint + "...";
+
+            message.style.display = "none";
+
+            try {
+
+                const response = await fetch(endpoint, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                const contentType =
+                    response.headers.get("content-type") || "";
+
+                let data;
+
+                if (contentType.includes("application/json")) {
+
+                    data = await response.json();
+
+                } else {
+
+                    data = await response.text();
+
+                }
+
+
+                if (!response.ok) {
+
+                    responseBox.textContent =
+                        typeof data === "string"
+                            ? data
+                            : JSON.stringify(data, null, 2);
+
+                    message.textContent =
+                        "API request failed. HTTP Status: "
+                        + response.status;
+
+                    message.className =
+                        "status-message error";
+
+                    message.style.display = "block";
+
+                    return;
+                }
+
+
+                responseBox.textContent =
+                    typeof data === "string"
+                        ? data
+                        : JSON.stringify(data, null, 2);
+
+
+                message.textContent =
+                    "GET request successful.";
+
+                message.className =
+                    "status-message success";
+
+                message.style.display = "block";
+
+
+            } catch (error) {
+
+                console.error(
+                    "API Explorer Error:",
+                    error
+                );
+
+                responseBox.textContent =
+                    "Request failed:\n\n"
+                    + error.message;
+
+
+                message.textContent =
+                    "Could not connect to the API.";
+
+                message.className =
+                    "status-message error";
+
+                message.style.display = "block";
+
+            }
+
+        }
+
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+
+        function logout() {
+
+            localStorage.removeItem("user");
+
+            window.location.href =
+                "/login";
+
+        }
+
+
+        // ==========================================
+        // LOAD ALL ANALYTICS
+        // ==========================================
+
+        async function loadDashboardData() {
+
+            await Promise.allSettled([
+
+                loadMetrics(),
+
+                loadWorkflow(),
+
+                loadSeverity(),
+
+                loadDefectTrend()
+
+            ]);
+
+        }
+
+
+        // ==========================================
+        // START
+        // ==========================================
+
+        loadDashboardData();
+
+    </script>
+
+</body>
+
+</html>

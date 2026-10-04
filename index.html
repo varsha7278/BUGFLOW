@@ -1,0 +1,749 @@
+from flask import Flask, jsonify, request, render_template
+from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import text
+
+from database import Base, SessionLocal, engine
+from models import (
+    User,
+    Issue,
+    IssueType,
+    Severity,
+    Priority,
+    IssueStatus
+)
+
+app = Flask(__name__)
+
+# ==========================================================
+# CREATE DATABASE TABLES
+# ==========================================================
+
+Base.metadata.create_all(bind=engine)
+
+
+# ==========================================================
+# PAGE ROUTES
+# ==========================================================
+
+@app.route("/")
+def home():
+    return jsonify({
+        "message": "BugFlow backend is running!",
+        "status": "success"
+    })
+
+
+@app.route("/login")
+def login_page():
+    return render_template("login.html")
+
+
+@app.route("/user-dashboard")
+def user_dashboard():
+    return render_template("user_dashboard.html")
+
+
+@app.route("/report-issue")
+def report_issue_page():
+    return render_template("issue_form.html")
+
+
+@app.route("/admin-dashboard")
+def admin_dashboard():
+    try:
+        return render_template("admin_dashboard.html")
+    except Exception:
+        return jsonify({
+            "message": "Failed to load admin dashboard",
+            "error": "admin_dashboard.html not found in templates folder"
+        }), 500
+
+
+# ==========================================================
+# REGISTER PAGE
+# No register.html required
+# ==========================================================
+
+@app.route("/register")
+def register_page():
+    return jsonify({
+        "message": "Registration API is available",
+        "endpoint": "/api/register",
+        "method": "POST"
+    })
+
+
+# ==========================================================
+# DATABASE TEST
+# ==========================================================
+
+@app.route("/api/test")
+def test_database():
+
+    db = SessionLocal()
+
+    try:
+
+        db.execute(text("SELECT 1"))
+
+        return jsonify({
+            "message": "Backend and PostgreSQL are connected!"
+        }), 200
+
+    except Exception as e:
+
+        return jsonify({
+            "message": "Database connection failed",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# REGISTER USER
+# ==========================================================
+
+@app.route("/api/register", methods=["POST"])
+def register():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "message": "No data received"
+        }), 400
+
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+    role = data.get("role", "user")
+
+    if not name or not email or not password:
+        return jsonify({
+            "message": "Name, email and password are required"
+        }), 400
+
+    role = role.lower()
+
+    if role not in ["user", "admin"]:
+        return jsonify({
+            "message": "Invalid role. Use user or admin."
+        }), 400
+
+    db = SessionLocal()
+
+    try:
+
+        existing_user = db.query(User).filter(
+            User.email == email
+        ).first()
+
+        if existing_user:
+            return jsonify({
+                "message": "Email already registered"
+            }), 409
+
+        password_hash = generate_password_hash(password)
+
+        new_user = User(
+            name=name.strip(),
+            email=email.strip().lower(),
+            password_hash=password_hash,
+            role=role
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return jsonify({
+
+            "message": "Registration successful",
+
+            "user": {
+                "id": new_user.id,
+                "name": new_user.name,
+                "email": new_user.email,
+                "role": new_user.role
+            }
+
+        }), 201
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "message": "Registration failed",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# LOGIN
+# ==========================================================
+
+@app.route("/api/login", methods=["POST"])
+def login():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "message": "No data received"
+        }), 400
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({
+            "message": "Email and password are required"
+        }), 400
+
+    db = SessionLocal()
+
+    try:
+
+        user = db.query(User).filter(
+            User.email == email.strip().lower()
+        ).first()
+
+        if not user:
+            return jsonify({
+                "message": "Invalid email or password"
+            }), 401
+
+        if not check_password_hash(
+            user.password_hash,
+            password
+        ):
+            return jsonify({
+                "message": "Invalid email or password"
+            }), 401
+
+        return jsonify({
+
+            "message": "Login successful",
+
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role
+            }
+
+        }), 200
+
+    except Exception as e:
+
+        return jsonify({
+            "message": "Login failed",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# CREATE ISSUE
+# ==========================================================
+
+@app.route("/api/issues", methods=["POST"])
+def create_issue():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "message": "No data received"
+        }), 400
+
+    issue_type = data.get("issue_type")
+    title = data.get("title")
+    description = data.get("description")
+    reproduction_steps = data.get("reproduction_steps")
+    severity = data.get("severity")
+    priority = data.get("priority")
+    affected_module = data.get("affected_module")
+    environment = data.get("environment")
+    project_key = data.get("project_key")
+    reporter_id = data.get("reporter_id")
+
+    # -----------------------------
+    # Validation
+    # -----------------------------
+
+    required = {
+        "issue_type": issue_type,
+        "title": title,
+        "description": description,
+        "severity": severity,
+        "priority": priority,
+        "project_key": project_key,
+        "reporter_id": reporter_id
+    }
+
+    for field, value in required.items():
+
+        if value is None or value == "":
+            return jsonify({
+                "message": f"{field} is required"
+            }), 400
+
+    db = SessionLocal()
+
+    try:
+
+        # -----------------------------
+        # Check reporter
+        # -----------------------------
+
+        reporter = db.query(User).filter(
+            User.id == reporter_id
+        ).first()
+
+        if not reporter:
+            return jsonify({
+                "message": "Reporter not found"
+            }), 404
+
+        # -----------------------------
+        # Convert enums
+        # -----------------------------
+
+        try:
+
+            issue_type_enum = IssueType(
+                str(issue_type).upper()
+            )
+
+            severity_enum = Severity(
+                str(severity).upper()
+            )
+
+            priority_enum = Priority(
+                str(priority).upper()
+            )
+
+        except ValueError as e:
+
+            return jsonify({
+                "message":
+                    "Invalid issue type, severity or priority",
+                "error": str(e)
+            }), 400
+
+        # -----------------------------
+        # Clean project key
+        # -----------------------------
+
+        project_key = str(
+            project_key
+        ).strip().upper()
+
+        # -----------------------------
+        # Generate issue key
+        # -----------------------------
+
+        issue_count = db.query(Issue).count() + 1
+
+        issue_key = f"{project_key}-{issue_count}"
+
+        # -----------------------------
+        # Create issue
+        # -----------------------------
+
+        new_issue = Issue(
+
+            issue_key=issue_key,
+
+            issue_type=issue_type_enum,
+
+            title=str(title).strip(),
+
+            description=str(description).strip(),
+
+            reproduction_steps=reproduction_steps,
+
+            severity=severity_enum,
+
+            priority=priority_enum,
+
+            status=IssueStatus.REPORTED,
+
+            affected_module=affected_module,
+
+            environment=environment,
+
+            project_key=project_key,
+
+            reporter_id=reporter_id
+
+        )
+
+        db.add(new_issue)
+
+        db.commit()
+
+        db.refresh(new_issue)
+
+        return jsonify({
+
+            "message": "Issue created successfully",
+
+            "issue": issue_to_dict(new_issue)
+
+        }), 201
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "message": "Failed to create issue",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# GET ALL ISSUES
+# ==========================================================
+
+@app.route("/api/issues", methods=["GET"])
+def get_issues():
+
+    db = SessionLocal()
+
+    try:
+
+        issues = db.query(Issue).order_by(
+            Issue.id.desc()
+        ).all()
+
+        return jsonify({
+            "issues": [
+                issue_to_dict(issue)
+                for issue in issues
+            ]
+        }), 200
+
+    except Exception as e:
+
+        return jsonify({
+            "message": "Failed to fetch issues",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# GET SINGLE ISSUE
+# ==========================================================
+
+@app.route("/api/issues/<int:issue_id>", methods=["GET"])
+def get_issue(issue_id):
+
+    db = SessionLocal()
+
+    try:
+
+        issue = db.query(Issue).filter(
+            Issue.id == issue_id
+        ).first()
+
+        if not issue:
+            return jsonify({
+                "message": "Issue not found"
+            }), 404
+
+        return jsonify(
+            issue_to_dict(issue)
+        ), 200
+
+    except Exception as e:
+
+        return jsonify({
+            "message": "Failed to fetch issue",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# UPDATE ISSUE STATUS
+# ==========================================================
+
+@app.route(
+    "/api/issues/<int:issue_id>/status",
+    methods=["PUT"]
+)
+def update_issue_status(issue_id):
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "message": "No data received"
+        }), 400
+
+    new_status = data.get("status")
+
+    if not new_status:
+        return jsonify({
+            "message": "Status is required"
+        }), 400
+
+    db = SessionLocal()
+
+    try:
+
+        issue = db.query(Issue).filter(
+            Issue.id == issue_id
+        ).first()
+
+        if not issue:
+            return jsonify({
+                "message": "Issue not found"
+            }), 404
+
+        try:
+
+            issue.status = IssueStatus(
+                str(new_status).upper()
+            )
+
+        except ValueError:
+
+            return jsonify({
+                "message": "Invalid status",
+                "allowed_statuses": [
+                    status.value
+                    for status in IssueStatus
+                ]
+            }), 400
+
+        db.commit()
+        db.refresh(issue)
+
+        return jsonify({
+
+            "message": "Issue status updated successfully",
+
+            "issue": issue_to_dict(issue)
+
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "message": "Failed to update issue status",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# UPDATE ISSUE PRIORITY
+# ==========================================================
+
+@app.route(
+    "/api/issues/<int:issue_id>/priority",
+    methods=["PUT"]
+)
+def update_issue_priority(issue_id):
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "message": "No data received"
+        }), 400
+
+    new_priority = data.get("priority")
+
+    if not new_priority:
+        return jsonify({
+            "message": "Priority is required"
+        }), 400
+
+    db = SessionLocal()
+
+    try:
+
+        issue = db.query(Issue).filter(
+            Issue.id == issue_id
+        ).first()
+
+        if not issue:
+            return jsonify({
+                "message": "Issue not found"
+            }), 404
+
+        try:
+
+            issue.priority = Priority(
+                str(new_priority).upper()
+            )
+
+        except ValueError:
+
+            return jsonify({
+                "message": "Invalid priority"
+            }), 400
+
+        db.commit()
+        db.refresh(issue)
+
+        return jsonify({
+
+            "message": "Priority updated successfully",
+
+            "issue": issue_to_dict(issue)
+
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "message": "Failed to update priority",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# DELETE ISSUE
+# ==========================================================
+
+@app.route(
+    "/api/issues/<int:issue_id>",
+    methods=["DELETE"]
+)
+def delete_issue(issue_id):
+
+    db = SessionLocal()
+
+    try:
+
+        issue = db.query(Issue).filter(
+            Issue.id == issue_id
+        ).first()
+
+        if not issue:
+            return jsonify({
+                "message": "Issue not found"
+            }), 404
+
+        db.delete(issue)
+        db.commit()
+
+        return jsonify({
+            "message": "Issue deleted successfully"
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "message": "Failed to delete issue",
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# ==========================================================
+# HELPER FUNCTION
+# ==========================================================
+
+def issue_to_dict(issue):
+
+    return {
+
+        "id": issue.id,
+
+        "issue_key": issue.issue_key,
+
+        "issue_type":
+            issue.issue_type.value
+            if issue.issue_type else None,
+
+        "title": issue.title,
+
+        "description": issue.description,
+
+        "reproduction_steps":
+            issue.reproduction_steps,
+
+        "status":
+            issue.status.value
+            if issue.status else None,
+
+        "severity":
+            issue.severity.value
+            if issue.severity else None,
+
+        "priority":
+            issue.priority.value
+            if issue.priority else None,
+
+        "affected_module":
+            issue.affected_module,
+
+        "environment":
+            issue.environment,
+
+        "project_key":
+            issue.project_key,
+
+        "reporter_id":
+            issue.reporter_id,
+
+        "assignee_id":
+            issue.assignee_id,
+
+        "created_at":
+            issue.created_at.isoformat()
+            if issue.created_at else None,
+
+        "updated_at":
+            issue.updated_at.isoformat()
+            if issue.updated_at else None
+    }
+
+
+# ==========================================================
+# START SERVER
+# ==========================================================
+
+if __name__ == "__main__":
+
+    app.run(
+        host="127.0.0.1",
+        port=8000,
+        debug=True
+    )

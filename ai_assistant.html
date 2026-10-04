@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>BugFlow AI Assistant</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #111827;
+            color: white;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .badge {
+            background: #4f46e5;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .title h1 {
+            font-size: 36px;
+            margin-bottom: 8px;
+            color: #111827;
+        }
+
+        .title p {
+            color: #6b7280;
+        }
+
+        .chat-box {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .messages {
+            height: 480px;
+            overflow-y: auto;
+            padding: 25px;
+        }
+
+        .message {
+            margin-bottom: 18px;
+            display: flex;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 15px;
+            line-height: 1.5;
+        }
+
+        .bot .bubble {
+            background: #f1f5f9;
+            color: #1f2937;
+        }
+
+        .user .bubble {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 18px;
+            border-top: 1px solid #e5e7eb;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .input-area button {
+            padding: 14px 25px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .input-area button:hover {
+            background: #3730a3;
+        }
+
+        .suggestions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 0 25px 20px;
+        }
+
+        .suggestion {
+            border: 1px solid #c7d2fe;
+            background: #eef2ff;
+            color: #3730a3;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .suggestion:hover {
+            background: #e0e7ff;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="header">
+
+        <div class="logo">
+            🐞 BugFlow
+        </div>
+
+        <div class="badge">
+            🤖 AI Assistant
+        </div>
+
+    </div>
+
+
+    <div class="container">
+
+        <div class="title">
+
+            <h1>BugFlow AI Assistant</h1>
+
+            <p>
+                Ask questions about your issues and project status
+            </p>
+
+        </div>
+
+
+        <div class="chat-box">
+
+            <div class="messages" id="messages">
+
+                <div class="message bot">
+
+                    <div class="bubble">
+
+                        👋 Hello! I'm the BugFlow AI Assistant.
+
+                        <br><br>
+
+                        Ask me things like:
+                        <br>
+                        • How many open issues are there?
+                        <br>
+                        • How many critical issues?
+                        <br>
+                        • How many resolved issues?
+                        <br>
+                        • What is BugFlow?
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="suggestions">
+
+                <button class="suggestion"
+                        onclick="askQuestion('How many open issues are there?')">
+
+                    Open Issues
+
+                </button>
+
+                <button class="suggestion"
+                        onclick="askQuestion('How many critical issues are there?')">
+
+                    Critical Issues
+
+                </button>
+
+                <button class="suggestion"
+                        onclick="askQuestion('How many resolved issues are there?')">
+
+                    Resolved Issues
+
+                </button>
+
+            </div>
+
+
+            <div class="input-area">
+
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="Ask BugFlow AI something..."
+                    onkeydown="handleEnter(event)"
+                >
+
+                <button onclick="sendMessage()">
+                    Send
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+function addMessage(text, type) {
+
+    const messages = document.getElementById("messages");
+
+    const message = document.createElement("div");
+
+    message.className = "message " + type;
+
+    const bubble = document.createElement("div");
+
+    bubble.className = "bubble";
+
+    bubble.innerHTML = text;
+
+    message.appendChild(bubble);
+
+    messages.appendChild(message);
+
+    messages.scrollTop = messages.scrollHeight;
+}
+
+
+function askQuestion(question) {
+
+    document.getElementById("messageInput").value = question;
+
+    sendMessage();
+}
+
+
+function handleEnter(event) {
+
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+
+}
+
+
+async function sendMessage() {
+
+    const input = document.getElementById("messageInput");
+
+    const message = input.value.trim();
+
+    if (!message) {
+        return;
+    }
+
+    addMessage(message, "user");
+
+    input.value = "";
+
+    addMessage("🤔 Thinking...", "bot");
+
+    try {
+
+        const response = await fetch("/api/ai/chat", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                message: message
+            })
+
+        });
+
+        const data = await response.json();
+
+        const messages = document.getElementById("messages");
+
+        messages.removeChild(messages.lastElementChild);
+
+        addMessage(
+            "🤖 " + data.reply,
+            "bot"
+        );
+
+    }
+
+    catch (error) {
+
+        const messages = document.getElementById("messages");
+
+        messages.removeChild(messages.lastElementChild);
+
+        addMessage(
+            "❌ Unable to connect to BugFlow AI.",
+            "bot"
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>

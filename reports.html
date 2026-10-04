@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugFlow - Reports</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background: #0b0b14; color: white; padding: 35px; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .header h1 { font-size: 28px; }
+        .header p { color: #85859b; margin-top: 8px; margin-bottom: 25px; }
+        .back-link { color: #aaaabd; text-decoration: none; font-size: 13px; }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .charts-row.full { grid-template-columns: 1fr; margin-top: 18px; }
+
+        .chart-box {
+            background: #151523;
+            border: 1px solid #28283b;
+            border-radius: 12px;
+            padding: 22px;
+        }
+
+        .chart-box h3 { margin-bottom: 18px; font-size: 15px; color: #ccc; }
+
+        .chart-canvas-wrap { position: relative; height: 300px; }
+
+        @media(max-width: 900px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Reports &amp; Quality Insights</h1>
+        <a href="/admin-dashboard" class="back-link">&larr; Back to Dashboard</a>
+    </div>
+    <p>Severity trends, workload &amp; project health</p>
+
+    <div class="charts-row">
+
+        <div class="chart-box">
+            <h3>Severity by Project</h3>
+            <div class="chart-canvas-wrap">
+                <canvas id="severityByProjectChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Assignee Workload (Open)</h3>
+            <div class="chart-canvas-wrap">
+                <canvas id="workloadChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="charts-row full">
+        <div class="chart-box">
+            <h3>Status Distribution</h3>
+            <div class="chart-canvas-wrap">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SEVERITY_LABELS = ["CRITICAL", "MAJOR", "MINOR", "TRIVIAL"];
+        const SEVERITY_COLORS = ["#ff5c7c", "#ffb45c", "#ffe75c", "#8c8c9c"];
+        const STATUS_LABELS = ["REPORTED", "TRIAGED", "IN_PROGRESS", "IN_REVIEW", "TESTING", "RESOLVED", "CLOSED"];
+        const OPEN_STATUSES = ["REPORTED", "TRIAGED", "IN_PROGRESS", "IN_REVIEW", "TESTING"];
+
+        async function loadReports() {
+            const response = await fetch("/api/issues");
+            const data = await response.json();
+            const issues = data.issues || [];
+
+            renderSeverityByProject(issues);
+            renderWorkload(issues);
+            renderStatusDistribution(issues);
+        }
+
+        function renderSeverityByProject(issues) {
+            const projects = [...new Set(issues.map(i => i.project_key))];
+
+            const datasets = SEVERITY_LABELS.map((severity, idx) => ({
+                label: severity,
+                data: projects.map(project =>
+                    issues.filter(i => i.project_key === project && i.severity === severity).length
+                ),
+                backgroundColor: SEVERITY_COLORS[idx]
+            }));
+
+            new Chart(document.getElementById("severityByProjectChart"), {
+                type: "bar",
+                data: { labels: projects, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, ticks: { color: "#aaaabd" }, grid: { color: "#28283b" } },
+                        y: { stacked: true, ticks: { color: "#aaaabd" }, grid: { color: "#28283b" }, beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { labels: { color: "#aaaabd" } }
+                    }
+                }
+            });
+        }
+
+        function renderWorkload(issues) {
+            const openIssues = issues.filter(i => OPEN_STATUSES.includes(i.status));
+
+            const assignees = [...new Set(
+                openIssues.map(i => i.assignee_id || "Unassigned")
+            )];
+
+            const counts = assignees.map(a =>
+                openIssues.filter(i => (i.assignee_id || "Unassigned") === a).length
+            );
+
+            const labels = assignees.map(a =>
+                a === "Unassigned" ? "Unassigned" : `User #${a}`
+            );
+
+            new Chart(document.getElementById("workloadChart"), {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Open Issues",
+                        data: counts,
+                        backgroundColor: "#6547ff",
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: "#aaaabd" }, grid: { color: "#28283b" }, beginAtZero: true },
+                        y: { ticks: { color: "#aaaabd" }, grid: { color: "#28283b" } }
+                    }
+                }
+            });
+        }
+
+        function renderStatusDistribution(issues) {
+            const counts = STATUS_LABELS.map(status =>
+                issues.filter(i => i.status === status).length
+            );
+
+            new Chart(document.getElementById("statusChart"), {
+                type: "bar",
+                data: {
+                    labels: STATUS_LABELS,
+                    datasets: [{
+                        label: "Issues",
+                        data: counts,
+                        backgroundColor: "#5c9eff",
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: "#aaaabd" }, grid: { color: "#28283b" } },
+                        y: { ticks: { color: "#aaaabd" }, grid: { color: "#28283b" }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        loadReports();
+    </script>
+
+</body>
+</html>

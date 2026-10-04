@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BugFlow - Admin Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+html{scroll-behavior:smooth}
+body{background:#0b0b14;color:white}
+.layout{display:flex;min-height:100vh}
+
+.sidebar{
+    width:230px;background:#11111d;border-right:1px solid #29293b;
+    padding:25px 15px;position:fixed;top:0;bottom:0;overflow:auto
+}
+.logo{display:flex;gap:12px;align-items:center;margin-bottom:35px}
+.logo-box{
+    width:40px;height:40px;border-radius:10px;
+    background:linear-gradient(135deg,#6d4aff,#9b5cff);
+    display:flex;align-items:center;justify-content:center;font-weight:bold
+}
+.logo p{color:#77778d;font-size:10px}
+.section{color:#66667d;font-size:11px;margin:20px 10px 10px}
+.nav{
+    display:block;color:#aaaabd;text-decoration:none;padding:12px;
+    margin:5px 0;border-radius:8px
+}
+.nav:hover,.active{background:#25254a;color:white}
+
+.main{margin-left:230px;padding:35px;width:calc(100% - 230px)}
+.header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:25px
+}
+.header h1{font-size:28px}
+.header p{color:#85859b;margin-top:8px}
+
+.refresh,.action-btn{
+    background:#6547ff;color:white;border:0;border-radius:8px;
+    padding:12px 18px;cursor:pointer
+}
+.action-btn.secondary{background:#25254a}
+.action-btn:hover,.refresh:hover{opacity:.9}
+
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.card{
+    background:#151523;border:1px solid #28283b;border-radius:12px;padding:22px
+}
+.card p{color:#85859b;font-size:13px}
+.card h2{margin-top:12px;font-size:30px}
+.card small{display:block;margin-top:7px;color:#66667d}
+
+.panel,.chart-box{
+    margin-top:25px;background:#151523;border:1px solid #28283b;
+    border-radius:12px;padding:22px
+}
+.panel h3,.chart-box h3{font-size:15px;color:#ddd;margin-bottom:15px}
+
+.charts-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:25px
+}
+.charts-row .chart-box{margin-top:0}
+.plot{height:330px;width:100%}
+
+.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.pipeline-card{
+    background:#11111d;border:1px solid #29293b;border-radius:10px;
+    padding:18px;text-align:center
+}
+.pipeline-card .count{font-size:28px;font-weight:bold;margin-top:8px}
+.pipeline-card .label{color:#85859b;font-size:12px}
+
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.webhook-box{display:grid;grid-template-columns:1fr auto;gap:12px}
+.webhook-box input{
+    background:#0b0b14;color:white;border:1px solid #29293b;
+    border-radius:8px;padding:12px
+}
+.result{
+    margin-top:15px;background:#0b0b14;border:1px solid #29293b;
+    border-radius:8px;padding:12px;color:#aaaabd;white-space:pre-wrap;display:none
+}
+.success{color:#69e6a5}
+.error{color:#ff8f9a}
+
+.api-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.api-card{
+    background:#11111d;border:1px solid #29293b;border-radius:10px;padding:14px
+}
+.api-card code{color:#b8aaff;font-size:12px}
+
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{padding:14px;text-align:left;border-bottom:1px solid #29293b}
+th{color:#88889d;font-size:12px}
+.status{
+    background:#29284c;color:#b8aaff;padding:5px 8px;
+    border-radius:6px;font-size:11px
+}
+.priority{color:#ffb45c}
+.delete-btn{
+    background:#52252d;color:#ff8f9a;border:0;padding:7px 10px;
+    border-radius:6px;cursor:pointer
+}
+.sprint-select{
+    background:#0b0b14;color:white;border:1px solid #28283b;
+    border-radius:6px;padding:6px;font-size:12px
+}
+
+.m4-banner{
+    margin-top:25px;padding:18px 20px;border:1px solid #3a3266;
+    border-radius:12px;background:linear-gradient(135deg,#17152a,#12121e)
+}
+.m4-banner h3{font-size:16px;margin-bottom:6px}
+.m4-banner p{color:#85859b;font-size:13px}
+
+.checklist{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:15px
+}
+.check{
+    background:#11111d;border:1px solid #29293b;border-radius:10px;
+    padding:14px;color:#bbb
+}
+.check span{color:#69e6a5;font-weight:bold;margin-right:7px}
+
+.scale-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.scale-card{
+    background:#11111d;border:1px solid #29293b;border-radius:10px;padding:18px
+}
+.scale-card .value{font-size:26px;font-weight:bold;margin-top:8px}
+.scale-card .sub{color:#77778d;font-size:12px;margin-top:5px}
+
+.kpi4{grid-template-columns:repeat(4,1fr)}
+.doc-btn{margin-top:15px}
+.workload-wrap{overflow-x:auto}
+.workload-table{min-width:760px}
+
+.balance{
+    padding:5px 9px;border-radius:6px;font-size:11px;
+    background:#1f3b31;color:#69e6a5
+}
+.balance.warning{background:#4a3520;color:#ffbd6b}
+.balance.danger{background:#52252d;color:#ff8f9a}
+
+.balance-panel{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px
+}
+.balance-box{
+    background:#11111d;border:1px solid #29293b;border-radius:10px;padding:16px
+}
+.balance-box p{color:#85859b;font-size:12px}
+.balance-box strong{display:block;font-size:24px;margin-top:7px}
+
+.loading{text-align:center;color:#85859b;padding:25px}
+.empty{text-align:center;color:#85859b;padding:25px}
+
+@media(max-width:1100px){
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .charts-row{grid-template-columns:1fr}
+    .api-grid{grid-template-columns:1fr 1fr}
+    .kpi4{grid-template-columns:repeat(2,1fr)}
+    .scale-grid,.checklist{grid-template-columns:1fr 1fr}
+    .balance-panel{grid-template-columns:1fr 1fr}
+}
+@media(max-width:900px){
+    .sidebar{width:190px}
+    .main{margin-left:190px;width:calc(100% - 190px)}
+    .pipeline{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:700px){
+    .sidebar{position:relative;width:100%;height:auto}
+    .layout{display:block}
+    .main{margin-left:0;width:100%;padding:20px}
+    .header{align-items:flex-start;gap:15px}
+    .header h1{font-size:22px}
+    .cards,.kpi4,.scale-grid,.checklist,.balance-panel{grid-template-columns:1fr}
+    .api-grid{grid-template-columns:1fr}
+    .webhook-box{grid-template-columns:1fr}
+    .pipeline{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+<div class="layout">
+
+<aside class="sidebar">
+    <div class="logo">
+        <div class="logo-box">BF</div>
+        <div>
+            <strong>BugFlow</strong>
+            <p>ISSUE TRACKER</p>
+        </div>
+    </div>
+
+    <div class="section">MAIN</div>
+    <a href="/" class="nav">◉ My Dashboard</a>
+    <a href="/admin-dashboard" class="nav active">▣ Admin Dashboard</a>
+    <a href="/my-issues" class="nav">☷ Issues</a>
+    <a href="/report-issue" class="nav">＋ New Issue</a>
+
+    <div class="section">MANAGEMENT</div>
+    <a href="/sprints" class="nav">◈ Sprints</a>
+    <a href="#" class="nav">▰ Projects</a>
+    <a href="/reports" class="nav">▥ Reports</a>
+    <a href="#" class="nav">⚙ Workflow</a>
+
+    <div class="section">MILESTONE 3</div>
+    <a href="#quality" class="nav">◈ Quality Scorecard</a>
+    <a href="#analytics" class="nav">▥ Analytics</a>
+    <a href="#webhook" class="nav">⑂ Git Webhook</a>
+    <a href="#exports" class="nav">⇩ Exports</a>
+
+    <div class="section">MILESTONE 4</div>
+    <a href="#optimization" class="nav">⚡ Optimization & Finalization</a>
+    <a href="#workload" class="nav">◫ Developer Workload</a>
+</aside>
+
+<main class="main">
+
+<div class="header">
+    <div>
+        <h1>Admin Dashboard</h1>
+        <p>System administration, issue management, analytics and optimization</p>
+    </div>
+    <button class="refresh" onclick="loadDashboard()">Refresh</button>
+</div>
+
+<!-- MAIN SUMMARY -->
+<div class="cards">
+    <div class="card">
+        <p>Total Issues</p>
+        <h2 id="total">0</h2>
+    </div>
+    <div class="card">
+        <p>Reported</p>
+        <h2 id="reported">0</h2>
+    </div>
+    <div class="card">
+        <p>High Priority</p>
+        <h2 id="high">0</h2>
+    </div>
+    <div class="card">
+        <p>Resolved / Closed</p>
+        <h2 id="resolved">0</h2>
+    </div>
+</div>
+
+<!-- MILESTONE 3 -->
+<div class="panel" id="quality">
+    <h3>Milestone 3: Quality Scorecard</h3>
+    <div class="cards">
+        <div class="card">
+            <p>Fix Rate</p>
+            <h2 id="fixRate">0%</h2>
+            <small>Resolved + Closed / Total</small>
+        </div>
+        <div class="card">
+            <p>MTTR</p>
+            <h2 id="mttr">0 hrs</h2>
+            <small>Mean Time To Resolution</small>
+        </div>
+        <div class="card">
+            <p>Defect Leakage</p>
+            <h2 id="leakage">0%</h2>
+            <small>Production bugs / Total bugs</small>
+        </div>
+        <div class="card">
+            <p>Backlog Health</p>
+            <h2 id="health">0</h2>
+            <small id="healthStatus">Loading...</small>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Workflow Pipeline</h3>
+    <div class="pipeline">
+        <div class="pipeline-card">
+            <div class="label">REPORTED</div>
+            <div class="count" id="pipeReported">0</div>
+        </div>
+        <div class="pipeline-card">
+            <div class="label">QA VERIFICATION</div>
+            <div class="count" id="pipeQA">0</div>
+        </div>
+        <div class="pipeline-card">
+            <div class="label">RESOLVED</div>
+            <div class="count" id="pipeResolved">0</div>
+        </div>
+        <div class="pipeline-card">
+            <div class="label">CLOSED</div>
+            <div class="count" id="pipeClosed">0</div>
+        </div>
+    </div>
+</div>
+
+<div class="charts-row" id="analytics">
+    <div class="chart-box">
+        <h3>Defect Trend - Last 14 Days</h3>
+        <div id="defectTrend" class="plot"></div>
+    </div>
+    <div class="chart-box">
+        <h3>Severity Distribution</h3>
+        <div id="severityPlot" class="plot"></div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Workflow Analytics</h3>
+    <div id="workflowPlot" class="plot"></div>
+</div>
+
+<div class="panel" id="webhook">
+    <h3>Git Webhook Simulator</h3>
+    <p style="color:#85859b;margin-bottom:15px">
+        Simulate a Git commit that automatically moves a linked issue to QA Verification.
+    </p>
+    <div class="webhook-box">
+        <input id="commitMessage"
+               value="Merge PR #45: fixes #2 login password crash">
+        <button class="action-btn" onclick="simulateWebhook()">
+            Simulate Git Commit
+        </button>
+    </div>
+    <div id="webhookResult" class="result"></div>
+</div>
+
+<div class="panel" id="exports">
+    <h3>Reports & Exports</h3>
+    <div class="actions">
+        <button class="action-btn" onclick="downloadFile('/api/v1/export/pdf')">
+            Export PDF
+        </button>
+        <button class="action-btn secondary" onclick="downloadFile('/api/v1/export/csv')">
+            Export CSV
+        </button>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>REST API Explorer</h3>
+    <p style="color:#85859b;margin-bottom:15px">
+        Milestone 3 and Milestone 4 backend endpoints connected to this dashboard.
+    </p>
+    <div class="api-grid">
+        <div class="api-card"><code>GET /health</code></div>
+        <div class="api-card"><code>GET /docs</code></div>
+        <div class="api-card"><code>GET /redoc</code></div>
+        <div class="api-card"><code>GET /api/v1/metrics</code></div>
+        <div class="api-card"><code>GET /api/v1/analytics/defect-trend</code></div>
+        <div class="api-card"><code>GET /api/v1/analytics/severity</code></div>
+        <div class="api-card"><code>GET /api/v1/analytics/workflow</code></div>
+        <div class="api-card"><code>GET /api/v1/analytics/plotly</code></div>
+        <div class="api-card"><code>GET /api/v1/analytics/developer-workload</code></div>
+        <div class="api-card"><code>POST /api/v1/webhooks/git</code></div>
+        <div class="api-card"><code>GET /api/v1/export/pdf</code></div>
+        <div class="api-card"><code>GET /api/v1/export/csv</code></div>
+    </div>
+</div>
+
+<!-- MILESTONE 4 -->
+<div class="m4-banner" id="optimization">
+    <h3>Milestone 4: Optimization & Finalization</h3>
+    <p>
+        Performance, developer productivity, database optimization and final project readiness.
+    </p>
+</div>
+
+<div class="panel">
+    <h3>Final Quality KPIs</h3>
+    <div class="cards kpi4">
+        <div class="card">
+            <p>Bug Fix Rate</p>
+            <h2 id="m4FixRate">0%</h2>
+            <small>Resolved + Closed / Total</small>
+        </div>
+        <div class="card">
+            <p>Average Fix Time</p>
+            <h2 id="m4FixTime">0 hrs</h2>
+            <small>Based on recorded resolved_at values</small>
+        </div>
+        <div class="card">
+            <p>Backlog Health</p>
+            <h2 id="m4Health">0/100</h2>
+            <small id="m4HealthStatus">Loading...</small>
+        </div>
+        <div class="card">
+            <p>Defect Leakage</p>
+            <h2 id="m4Leakage">0%</h2>
+            <small>Production bugs / Total issues</small>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>System Scale & Performance</h3>
+    <div class="scale-grid">
+        <div class="scale-card">
+            <p>Max DB Pool</p>
+            <div class="value">30</div>
+            <div class="sub">20 base + 10 overflow</div>
+        </div>
+        <div class="scale-card">
+            <p>Measured API Response</p>
+            <div class="value">26.99 ms</div>
+            <div class="sub">Authenticated /api/issues request</div>
+        </div>
+        <div class="scale-card">
+            <p>Scale Target</p>
+            <div class="value">50,000+</div>
+            <div class="sub">Issue records supported by optimized access patterns</div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Database Performance Checklist</h3>
+    <div class="checklist">
+        <div class="check"><span>✓</span>PostgreSQL Composite Indexes Active</div>
+        <div class="check"><span>✓</span>Connection Pooling Enabled</div>
+        <div class="check"><span>✓</span>Database-level Pagination Enabled</div>
+    </div>
+    <p style="color:#85859b;margin-top:14px;font-size:12px">
+        Current implementation uses project_key because the existing Issue model/database
+        does not contain project_id.
+    </p>
+</div>
+
+<div class="panel" id="workload">
+    <h3>Developer Productivity Matrix</h3>
+    <p style="color:#85859b;font-size:13px">
+        Live workload, completed fixes and average resolution time by developer.
+    </p>
+
+    <div class="balance-panel">
+        <div class="balance-box">
+            <p>Maximum Active Tasks</p>
+            <strong id="maxActiveTasks">0</strong>
+        </div>
+        <div class="balance-box">
+            <p>Minimum Active Tasks</p>
+            <strong id="minActiveTasks">0</strong>
+        </div>
+        <div class="balance-box">
+            <p>Workload Difference</p>
+            <strong id="workloadDifference">0</strong>
+        </div>
+        <div class="balance-box">
+            <p>Resource Balance</p>
+            <strong id="resourceBalance">Loading...</strong>
+        </div>
+    </div>
+
+    <div class="workload-wrap">
+        <table class="workload-table">
+            <thead>
+                <tr>
+                    <th>Developer</th>
+                    <th>Team</th>
+                    <th>Active Tasks</th>
+                    <th>Completed Fixes</th>
+                    <th>Average MTTR</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody id="workloadTable">
+                <tr>
+                    <td colspan="6" class="loading">Loading developer workload...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Final Documentation</h3>
+    <p style="color:#85859b">
+        Open the API documentation and project README from the finalization area.
+    </p>
+    <div class="actions doc-btn">
+        <button class="action-btn" onclick="window.open('/docs','_blank')">
+            Open API Docs
+        </button>
+        <button class="action-btn secondary" onclick="window.open('/README.md','_blank')">
+            Open README
+        </button>
+    </div>
+</div>
+
+<!-- ISSUE MANAGEMENT -->
+<div class="panel">
+    <h3>Issue Management</h3>
+    <p style="color:#85859b;font-size:13px;margin-bottom:10px">
+        Latest issues. The backend API uses database-level pagination.
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Issue</th>
+                <th>Title</th>
+                <th>Priority</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Sprint</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="issueTable">
+            <tr>
+                <td colspan="7" class="loading">Loading issues...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+</main>
+</div>
+
+<script>
+let allSprints = [];
+
+async function apiFetch(url, options = {}) {
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.message || data.error || `Request failed (${response.status})`);
+    }
+
+    return data;
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function displayStatus(status) {
+    return status === "IN_REVIEW" ? "QA_VERIFICATION" : status;
+}
+
+function formatNumber(value, digits = 1) {
+    const number = Number(value || 0);
+    return number.toFixed(digits);
+}
+
+function balanceClass(status) {
+    const s = String(status || "BALANCED").toUpperCase();
+
+    if (s === "IMBALANCED") return "balance danger";
+    if (s === "MODERATE_IMBALANCE" || s === "NEEDS_ATTENTION") {
+        return "balance warning";
+    }
+
+    return "balance";
+}
+
+async function loadSprintsForDropdown() {
+    try {
+        const data = await apiFetch("/api/sprints");
+        allSprints = data.sprints || [];
+    } catch (error) {
+        console.error("Sprints:", error);
+        allSprints = [];
+    }
+}
+
+function sprintOptionsHtml(selectedId) {
+    let html = '<option value="">-- No Sprint --</option>';
+
+    allSprints.forEach(sprint => {
+        html += `
+            <option value="${sprint.id}"
+                ${Number(sprint.id) === Number(selectedId) ? "selected" : ""}>
+                ${escapeHtml(sprint.name)}
+            </option>
+        `;
+    });
+
+    return html;
+}
+
+async function assignSprint(issueId, sprintId) {
+    try {
+        await apiFetch(`/api/issues/${issueId}/sprint`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                sprint_id: sprintId ? parseInt(sprintId) : null
+            })
+        });
+
+        await loadIssues();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function loadIssues() {
+    try {
+        await loadSprintsForDropdown();
+
+        const data = await apiFetch("/api/issues?skip=0&limit=20");
+        const issues = data.issues || [];
+        const pagination = data.pagination || {};
+
+        document.getElementById("total").innerText =
+            Number(pagination.total ?? issues.length);
+
+        document.getElementById("reported").innerText =
+            issues.filter(i => i.status === "REPORTED").length;
+
+        document.getElementById("high").innerText =
+            issues.filter(i => i.priority === "HIGH").length;
+
+        document.getElementById("resolved").innerText =
+            issues.filter(i => i.status === "RESOLVED" || i.status === "CLOSED").length;
+
+        const table = document.getElementById("issueTable");
+
+        if (!issues.length) {
+            table.innerHTML =
+                '<tr><td colspan="7" class="empty">No issues found.</td></tr>';
+            return;
+        }
+
+        table.innerHTML = issues.map(issue => `
+            <tr>
+                <td>${escapeHtml(issue.issue_key)}</td>
+                <td>${escapeHtml(issue.title)}</td>
+                <td class="priority">${escapeHtml(issue.priority)}</td>
+                <td>${escapeHtml(issue.severity)}</td>
+                <td>
+                    <span class="status">
+                        ${escapeHtml(displayStatus(issue.status))}
+                    </span>
+                </td>
+                <td>
+                    <select class="sprint-select"
+                            onchange="assignSprint(${issue.id}, this.value)">
+                        ${sprintOptionsHtml(issue.sprint_id)}
+                    </select>
+                </td>
+                <td>
+                    <button class="delete-btn"
+                            onclick="deleteIssue(${issue.id})">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `).join("");
+
+    } catch (error) {
+        console.error("Issues:", error);
+        document.getElementById("issueTable").innerHTML =
+            `<tr><td colspan="7" class="error">${escapeHtml(error.message)}</td></tr>`;
+    }
+}
+
+async function loadMetrics() {
+    try {
+        const data = await apiFetch("/api/v1/metrics");
+
+        const fixRate = Number(data.fix_rate || 0);
+        const mttr = Number(data.mttr_hours || 0);
+        const leakage = Number(data.defect_leakage_rate || 0);
+        const health = Number(data.backlog_health_score || 0);
+
+        document.getElementById("fixRate").innerText =
+            fixRate.toFixed(1) + "%";
+
+        document.getElementById("mttr").innerText =
+            mttr.toFixed(1) + " hrs";
+
+        document.getElementById("leakage").innerText =
+            leakage.toFixed(1) + "%";
+
+        document.getElementById("health").innerText =
+            health.toFixed(0);
+
+        document.getElementById("healthStatus").innerText =
+            data.backlog_health_status === "RELEASE_READY"
+                ? "RELEASE READY"
+                : "NEEDS ATTENTION";
+
+    } catch (error) {
+        console.error("Metrics:", error);
+    }
+}
+
+function plotLayout(title) {
+    return {
+        title: {
+            text: title,
+            font: {color:"#ddd", size:14}
+        },
+        paper_bgcolor:"#151523",
+        plot_bgcolor:"#151523",
+        font:{color:"#aaaabd"},
+        margin:{l:45,r:20,t:45,b:45},
+        xaxis:{gridcolor:"#28283b"},
+        yaxis:{gridcolor:"#28283b", zeroline:true},
+        legend:{orientation:"h"}
+    };
+}
+
+async function loadDefectTrend() {
+    try {
+        const data = await apiFetch("/api/v1/analytics/defect-trend");
+
+        const x = data.dates || data.labels || [];
+        const newBugs =
+            data.new_bugs || data.new || data.created || [];
+
+        const resolvedBugs =
+            data.resolved_bugs || data.resolved || [];
+
+        Plotly.newPlot(
+            "defectTrend",
+            [
+                {
+                    x:x,
+                    y:newBugs,
+                    type:"scatter",
+                    mode:"lines+markers",
+                    name:"New Bugs"
+                },
+                {
+                    x:x,
+                    y:resolvedBugs,
+                    type:"scatter",
+                    mode:"lines+markers",
+                    name:"Resolved Bugs"
+                }
+            ],
+            plotLayout("Defect Trend"),
+            {responsive:true, displayModeBar:false}
+        );
+
+    } catch (error) {
+        console.error("Trend:", error);
+    }
+}
+
+async function loadSeverity() {
+    try {
+        const data = await apiFetch("/api/v1/analytics/severity");
+
+        const labels = ["CRITICAL","MAJOR","MINOR","BLOCKER","TRIVIAL"];
+        const values = labels.map(label => Number(data[label] || 0));
+
+        Plotly.newPlot(
+            "severityPlot",
+            [{
+                labels:labels,
+                values:values,
+                type:"pie",
+                hole:.55
+            }],
+            plotLayout("Severity"),
+            {responsive:true, displayModeBar:false}
+        );
+
+    } catch (error) {
+        console.error("Severity:", error);
+    }
+}
+
+async function loadWorkflow() {
+    try {
+        const data = await apiFetch("/api/v1/analytics/workflow");
+        const workflow = data.workflow || data;
+
+        let map = {};
+
+        if (Array.isArray(workflow)) {
+            workflow.forEach(item => {
+                map[displayStatus(item.status)] =
+                    Number(item.count || 0);
+            });
+        } else {
+            map = workflow;
+        }
+
+        const labels = [
+            "REPORTED",
+            "QA_VERIFICATION",
+            "RESOLVED",
+            "CLOSED"
+        ];
+
+        const values = labels.map(label =>
+            Number(map[label] || 0)
+        );
+
+        document.getElementById("pipeReported").innerText = values[0];
+        document.getElementById("pipeQA").innerText = values[1];
+        document.getElementById("pipeResolved").innerText = values[2];
+        document.getElementById("pipeClosed").innerText = values[3];
+
+        Plotly.newPlot(
+            "workflowPlot",
+            [{
+                x:labels,
+                y:values,
+                type:"bar"
+            }],
+            plotLayout("Workflow Pipeline"),
+            {responsive:true, displayModeBar:false}
+        );
+
+    } catch (error) {
+        console.error("Workflow:", error);
+    }
+}
+
+async function simulateWebhook() {
+    const message =
+        document.getElementById("commitMessage").value.trim();
+
+    const result =
+        document.getElementById("webhookResult");
+
+    result.style.display = "block";
+    result.className = "result";
+
+    if (!message) {
+        result.className = "result error";
+        result.innerText = "Enter a commit message.";
+        return;
+    }
+
+    result.innerText = "Processing Git webhook...";
+
+    try {
+        const data = await apiFetch(
+            "/api/v1/webhooks/git",
+            {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({
+                    commit:"a7f8c92",
+                    message:message
+                })
+            }
+        );
+
+        result.className = "result success";
+        result.innerText = JSON.stringify(data, null, 2);
+
+        await loadDashboard();
+
+    } catch (error) {
+        result.className = "result error";
+        result.innerText = error.message;
+    }
+}
+
+function downloadFile(url) {
+    window.location.href = url;
+}
+
+async function deleteIssue(issueId) {
+    if (!confirm("Delete this issue?")) {
+        return;
+    }
+
+    try {
+        await apiFetch(`/api/issues/${issueId}`, {
+            method:"DELETE"
+        });
+
+        await loadDashboard();
+
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function loadM4() {
+    try {
+        const [metrics, workload] = await Promise.all([
+            apiFetch("/api/v1/metrics"),
+            apiFetch("/api/v1/analytics/developer-workload")
+        ]);
+
+        document.getElementById("m4FixRate").innerText =
+            Number(metrics.fix_rate || 0).toFixed(1) + "%";
+
+        document.getElementById("m4FixTime").innerText =
+            Number(metrics.mttr_hours || 0).toFixed(1) + " hrs";
+
+        document.getElementById("m4Health").innerText =
+            Number(metrics.backlog_health_score || 0).toFixed(0) + "/100";
+
+        document.getElementById("m4HealthStatus").innerText =
+            metrics.backlog_health_status === "RELEASE_READY"
+                ? "RELEASE READY"
+                : "NEEDS ATTENTION";
+
+        document.getElementById("m4Leakage").innerText =
+            Number(metrics.defect_leakage_rate || 0).toFixed(1) + "%";
+
+        const resource =
+            workload.resource_balance || {};
+
+        const maxActive =
+            Number(
+                resource.max_active_tasks ??
+                resource.maximum_active_tasks ??
+                0
+            );
+
+        const minActive =
+            Number(
+                resource.min_active_tasks ??
+                resource.minimum_active_tasks ??
+                0
+            );
+
+        const difference =
+            Number(
+                resource.difference ??
+                resource.workload_difference ??
+                0
+            );
+
+        const balanceStatus =
+            String(resource.status || "BALANCED").toUpperCase();
+
+        document.getElementById("maxActiveTasks").innerText = maxActive;
+        document.getElementById("minActiveTasks").innerText = minActive;
+        document.getElementById("workloadDifference").innerText = difference;
+
+        const balanceElement =
+            document.getElementById("resourceBalance");
+
+        balanceElement.innerText = balanceStatus;
+        balanceElement.className =
+            balanceClass(balanceStatus);
+
+        const developers =
+            workload.developers ||
+            workload.workload ||
+            [];
+
+        const table =
+            document.getElementById("workloadTable");
+
+        if (!developers.length) {
+            table.innerHTML =
+                '<tr><td colspan="6" class="empty">No developer workload data available.</td></tr>';
+            return;
+        }
+
+        table.innerHTML = developers.map(developer => `
+            <tr>
+                <td>${escapeHtml(
+                    developer.developer ||
+                    developer.name ||
+                    "Unknown"
+                )}</td>
+
+                <td>${escapeHtml(
+                    developer.team ||
+                    "BugFlow Engineering"
+                )}</td>
+
+                <td>
+                    <span class="status">
+                        ${Number(
+                            developer.active_tasks ??
+                            developer.activeTasks ??
+                            0
+                        )}
+                    </span>
+                </td>
+
+                <td>${Number(
+                    developer.completed_fixes ??
+                    developer.completedFixes ??
+                    0
+                )}</td>
+
+                <td>${Number(
+                    developer.average_mttr_hours ??
+                    developer.avg_mttr_hours ??
+                    developer.mttr_hours ??
+                    0
+                ).toFixed(1)} hrs</td>
+
+                <td>${escapeHtml(
+                    developer.role || "user"
+                )}</td>
+            </tr>
+        `).join("");
+
+    } catch (error) {
+        console.error("Module 4:", error);
+
+        document.getElementById("workloadTable").innerHTML =
+            `<tr>
+                <td colspan="6" class="error">
+                    Developer workload API unavailable: ${escapeHtml(error.message)}
+                </td>
+            </tr>`;
+
+        document.getElementById("resourceBalance").innerText =
+            "API ERROR";
+        document.getElementById("resourceBalance").className =
+            "balance danger";
+    }
+}
+
+async function loadDashboard() {
+    await Promise.allSettled([
+        loadIssues(),
+        loadMetrics(),
+        loadDefectTrend(),
+        loadSeverity(),
+        loadWorkflow(),
+        loadM4()
+    ]);
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

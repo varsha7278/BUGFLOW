@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>BugFlow - My Issues</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f6f7fb;
+            color: #1f2937;
+        }
+
+        .navbar {
+            height: 70px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .logo {
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #7c3aed;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #4b5563;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            color: #7c3aed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 25px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+        }
+
+        .header p {
+            color: #6b7280;
+            margin-top: 7px;
+        }
+
+        .report-btn {
+            background: #7c3aed;
+            color: white;
+            padding: 13px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .report-btn:hover {
+            background: #6d28d9;
+        }
+
+        .issues-grid {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fill,
+                minmax(330px, 1fr)
+            );
+            gap: 20px;
+        }
+
+        .issue-card {
+            background: white;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+            transition: 0.2s;
+        }
+
+        .issue-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.10);
+        }
+
+        .issue-key {
+            color: #7c3aed;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .issue-title {
+            font-size: 19px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #6b7280;
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #f3f4f6;
+        }
+
+        .status {
+            color: #7c3aed;
+            background: #ede9fe;
+        }
+
+        .severity {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+
+        .priority {
+            color: #d97706;
+            background: #fef3c7;
+        }
+
+        .module {
+            color: #2563eb;
+            background: #dbeafe;
+        }
+
+        .empty {
+            text-align: center;
+            background: white;
+            padding: 60px;
+            border-radius: 16px;
+            color: #6b7280;
+        }
+
+        .empty h2 {
+            margin-bottom: 10px;
+            color: #374151;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #6b7280;
+        }
+
+        .error {
+            text-align: center;
+            background: white;
+            padding: 50px;
+            border-radius: 16px;
+            color: #dc2626;
+        }
+
+        .login-btn {
+            display: inline-block;
+            margin-top: 20px;
+            background: #7c3aed;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-links {
+                gap: 10px;
+            }
+
+            .container {
+                margin-top: 25px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .issues-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar">
+
+    <div class="logo">
+        Bug<span>Flow</span>
+    </div>
+
+    <div class="nav-links">
+        <a href="/user-dashboard">Dashboard</a>
+        <a href="/report-issue">Report Issue</a>
+    </div>
+
+</nav>
+
+
+<div class="container">
+
+    <div class="header">
+
+        <div>
+            <h1>My Issues</h1>
+            <p>Track and manage your reported issues.</p>
+        </div>
+
+        <a href="/report-issue" class="report-btn">
+            + Report Issue
+        </a>
+
+    </div>
+
+
+    <div id="issuesContainer" class="loading">
+        Loading issues...
+    </div>
+
+</div>
+
+
+<script>
+
+async function loadIssues() {
+
+    const container =
+        document.getElementById("issuesContainer");
+
+    try {
+
+        /*
+         * ?mine=true tells Flask to return
+         * only issues reported by the logged-in user.
+         */
+        const response = await fetch(
+            "/api/issues?mine=true",
+            {
+                method: "GET",
+                credentials: "same-origin"
+            }
+        );
+
+        const data = await response.json();
+
+        /*
+         * User is not logged in
+         */
+        if (response.status === 401) {
+
+            container.className = "error";
+
+            container.innerHTML = `
+                <h2>Login Required</h2>
+                <p>Please login to view your issues.</p>
+
+                <a href="/login" class="login-btn">
+                    Go to Login
+                </a>
+            `;
+
+            return;
+        }
+
+        /*
+         * Backend error
+         */
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                data.message ||
+                "Failed to load issues"
+            );
+        }
+
+        const issues = data.issues || [];
+
+        /*
+         * No issues
+         */
+        if (issues.length === 0) {
+
+            container.className = "empty";
+
+            container.innerHTML = `
+                <h2>No issues found</h2>
+                <p>
+                    You haven't reported any issues yet.
+                </p>
+            `;
+
+            return;
+        }
+
+        /*
+         * Display issues
+         */
+        container.className = "issues-grid";
+
+        container.innerHTML = issues.map(issue => {
+
+            return `
+                <div class="issue-card">
+
+                    <div class="issue-key">
+                        ${escapeHtml(issue.issue_key)}
+                    </div>
+
+                    <div class="issue-title">
+                        ${escapeHtml(issue.title)}
+                    </div>
+
+                    <div class="description">
+                        ${escapeHtml(
+                            issue.description || "No description"
+                        )}
+                    </div>
+
+                    <div class="badges">
+
+                        <span class="badge status">
+                            ${escapeHtml(
+                                issue.status || "REPORTED"
+                            )}
+                        </span>
+
+                        <span class="badge severity">
+                            ${escapeHtml(
+                                issue.severity || "N/A"
+                            )}
+                        </span>
+
+                        <span class="badge priority">
+                            ${escapeHtml(
+                                issue.priority || "N/A"
+                            )}
+                        </span>
+
+                        <span class="badge module">
+                            ${escapeHtml(
+                                issue.affected_module ||
+                                "General"
+                            )}
+                        </span>
+
+                    </div>
+
+                    <small>
+                        Project:
+                        ${escapeHtml(
+                            issue.project_key || "N/A"
+                        )}
+                    </small>
+
+                </div>
+            `;
+
+        }).join("");
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Failed to load issues:",
+            error
+        );
+
+        container.className = "error";
+
+        container.innerHTML = `
+            <h2>Unable to load issues</h2>
+
+            <p>
+                ${escapeHtml(error.message)}
+            </p>
+
+            <p style="margin-top:10px;">
+                Please check the Flask terminal for
+                the database error.
+            </p>
+        `;
+    }
+}
+
+
+/*
+ * Prevent HTML injection when displaying
+ * database values.
+ */
+function escapeHtml(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+/*
+ * Load issues when page opens.
+ */
+loadIssues();
+
+</script>
+
+</body>
+</html>
